@@ -1,6 +1,6 @@
-#YKSSH initcpio hook
+# YKSSH initcpio hook
 
-##Use case
+## Use case
 
 Securing a headless server with luks encrypted root partition, using yubikey challenge-response.
 
@@ -10,7 +10,7 @@ This initcpio hook allows for that password to be inserted via ssh. (you still n
 
 Based on the similar hooks from ykfde and mkinitcpio-utils (for Archlinux)
 
-##Installation 
+## Installation 
 
 Copy the contents of the hooks and install folders to the respective folders in /usr/lib/initcpio
 
