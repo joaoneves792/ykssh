@@ -1,0 +1,41 @@
+#!/bin/sh
+
+YUBIKEY_SLOT=1
+
+if [ -f /.cryptdev ] && [ -f /.cryptname ] && [ -f /.cryptargs ]; then
+    CRYPTDEV=$(cat /.cryptdev)
+    CRYPTNAME=$(cat /.cryptname)
+    CRYPTARGS=$(cat /.cryptargs)
+    echo "Insert YubiKey"
+    while [ -z "$YUBIKEY" ]; do
+        _tmp="$(ykinfo -$YUBIKEY_SLOT 2>&1)"
+        _rc=$?
+        if [ "$_rc" -eq 0 ]; then
+            YUBIKEY=1
+        else
+            sleep 0.5
+        fi
+    done
+    echo "YubiKey found!"
+    read -p "Enter password:" -r -s PASSPHRASE
+    echo ""
+    echo "Remember to touch the device if necessary."
+    YKFDE_CHALLENGE="$(printf %s "$PASSPHRASE" | sha256sum | awk '{print $1}')"
+    YKFDE_RESPONSE="$(printf %s "$YKFDE_CHALLENGE" | ykchalresp -$YUBIKEY_SLOT -i- | tr -d '\n')"
+    echo "YubiKey challenge-response successful"
+    LUKS_PASSPHRASE="$YKFDE_CHALLENGE$YKFDE_RESPONSE"
+    printf %s "$LUKS_PASSPHRASE" | cryptsetup luksOpen "$CRYPTDEV" "$CRYPTNAME" "$CRYPTARGS"
+    _rc=$?
+    if [ "$_rc" -eq 0 ]; then
+	echo "Cryptsetup open sucessful"
+    	rm /.cryptdev /.cryptname /.cryptargs
+	echo > /.done
+	exit 0
+    else
+	echo "Wrong password"
+    fi
+else
+    echo "Config not yet available, try again"
+fi
+
+# vim: set ft=sh ts=4 sw=4 et:
